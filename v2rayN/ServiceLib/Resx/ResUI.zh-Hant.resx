@@ -882,6 +882,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>請勿將代理伺服器用於本機（Intranet）位址</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>一鍵清除失效節點</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>請選擇具體訂閱群組，並等待測速或清理結束。</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>已清除 {0} 個失效節點。</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>一鍵延遲與速度測試 (Ctrl+E)</value>
   </data>

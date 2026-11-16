@@ -18,6 +18,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     private string _serverFilter = string.Empty;
     private readonly Dictionary<string, bool> _dicHeaderSort = new();
     private SpeedtestService? _speedtestService;
+    private bool _isClearingInvalidServers;
     private string? _pendingSelectIndexId;
 
     #endregion private prop
@@ -67,6 +68,9 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     //servers ping
     public ReactiveCommand<RxVoid, RxVoid> MixedTestServerCmd { get; }
+
+    /// <summary>清理当前订阅组中延迟已确认失败的节点。</summary>
+    public ReactiveCommand<RxVoid, RxVoid> ClearInvalidServersCmd { get; }
 
     public ReactiveCommand<RxVoid, RxVoid> TcpingServerCmd { get; }
     public ReactiveCommand<RxVoid, RxVoid> RealPingServerCmd { get; }
@@ -178,6 +182,13 @@ public partial class ProfilesViewModel : MyReactiveObject
         {
             await ServerSpeedtest(ESpeedActionType.Mixedtest);
         });
+        // ReactiveCommand 自动禁用执行中的清理项；全部组视图也不提供清理操作。
+        var canClearInvalidServers = this.WhenAnyValue(x => x.SelectedSub,
+            sub => !string.IsNullOrWhiteSpace(sub?.Id));
+        ClearInvalidServersCmd = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await ClearInvalidServers();
+        }, canClearInvalidServers);
         TcpingServerCmd = ReactiveCommand.CreateFromTask(async () =>
         {
             await ServerSpeedtest(ESpeedActionType.Tcping);
@@ -634,6 +645,10 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task SortServer(string colName)
     {
+        if (_isClearingInvalidServers)
+        {
+            return;
+        }
         if (colName.IsNullOrEmpty())
         {
             return;
@@ -656,6 +671,55 @@ public partial class ProfilesViewModel : MyReactiveObject
         NoticeManager.Instance.Enqueue(string.Format(ResUI.RemoveInvalidServerResultTip, count));
     }
 
+    /// <summary>立即清理整个当前组并刷新列表，不受搜索和选中行限制，也不记录永久过滤名单。</summary>
+    /// <returns>清理、选中项处理和列表刷新完成后结束。</returns>
+    public async Task ClearInvalidServers()
+    {
+        // 在第一次等待前固定组 ID，切换分组不会改变本次删除范围。
+        var subId = SelectedSub?.Id;
+        if (string.IsNullOrWhiteSpace(subId) || _isClearingInvalidServers || _speedtestService?.IsRunning == true)
+        {
+            NoticeManager.Instance.Enqueue(ResUI.ClearInvalidServersUnavailable);
+            return;
+        }
+
+        _isClearingInvalidServers = true;
+        try
+        {
+            var removedIds = await ProfileExManager.Instance.ClearInvalidServers(subId);
+
+            // 清理已选中的失败节点时移除默认节点引用；可用的选中节点保持原 ID。
+            if (removedIds.Contains(_config.IndexId))
+            {
+                _config.IndexId = string.Empty;
+                if (await ConfigTextHandler.SaveConfig() != 0)
+                {
+                    NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
+                    await RefreshServers();
+                    return;
+                }
+                Reload();
+            }
+
+            // 等待重新读取持久化列表后再允许测速，避免使用清理前的界面快照。
+            await RefreshServersBiz();
+            if (ProfileItems.Count == 0)
+            {
+                SelectedProfile = new();
+            }
+            NoticeManager.Instance.Enqueue(string.Format(ResUI.ClearInvalidServersResultTip, removedIds.Count));
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog($"ClearInvalidServers: subId={subId}", ex);
+            NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
+        }
+        finally
+        {
+            _isClearingInvalidServers = false;
+        }
+    }
+
     //move server
     private async Task MoveToGroup()
     {
@@ -675,6 +739,10 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task MoveServer(EMove eMove)
     {
+        if (_isClearingInvalidServers)
+        {
+            return;
+        }
         var lstProfile = ProfileItems?.Select(t => t.IndexId).ToList() ?? [];
         var index = lstProfile.IndexOf(SelectedProfile.IndexId);
         if (index < 0)
@@ -691,6 +759,10 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task MoveServerTo(int startIndex, ProfileItemModel targetItem)
     {
+        if (_isClearingInvalidServers)
+        {
+            return;
+        }
         var targetIndex = ProfileItems.IndexOf(targetItem);
         if (startIndex >= 0 && targetIndex >= 0 && startIndex != targetIndex)
         {
@@ -706,6 +778,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         IReadOnlyList<int> sourceIndices,
         int insertIndex)
     {
+        if (_isClearingInvalidServers)
+        {
+            return;
+        }
         if (sourceIndices.Count == 0 ||
             insertIndex < 0 ||
             insertIndex > ProfileItems.Count)
@@ -730,6 +806,10 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task ServerSpeedtest(ESpeedActionType actionType)
     {
+        if (_isClearingInvalidServers)
+        {
+            return;
+        }
         List<ProfileItem>? lstSelected;
         if (actionType is ESpeedActionType.Mixedtest or ESpeedActionType.FastRealping)
         {
@@ -750,15 +830,21 @@ public partial class ProfilesViewModel : MyReactiveObject
             return;
         }
 
-        _speedtestService ??= new SpeedtestService(_config, async (SpeedTestResult result) =>
+        // 单节点读取可能经过异步等待，启动前再次确认清理尚未开始。
+        if (_isClearingInvalidServers)
         {
-            RxSchedulers.MainThreadScheduler.Schedule(() =>
-            {
-                _ = SetSpeedTestResult(result);
-            });
-            await Task.CompletedTask;
-        });
+            return;
+        }
+
+        _speedtestService ??= new SpeedtestService(_config, QueueSpeedTestResult);
         _speedtestService?.RunLoop(actionType, lstSelected);
+    }
+
+    private Task QueueSpeedTestResult(SpeedTestResult result)
+    {
+        // 回执仍派发到界面线程更新行；方法回调避免在启动测速的方法内嵌套 Lambda。
+        RxSchedulers.MainThreadScheduler.Schedule(() => { _ = SetSpeedTestResult(result); });
+        return Task.CompletedTask;
     }
 
     public void ServerSpeedtestStop()

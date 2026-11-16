@@ -876,6 +876,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>Jangan gunakan server proxy untuk alamat lokal (intranet)</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>Hapus node yang tidak tersedia</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>Pilih grup langganan dan tunggu hingga pengujian atau pembersihan selesai.</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>{0} node yang tidak tersedia telah dihapus.</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>Uji latensi dan kecepatan multi-thread sekali klik (Ctrl+E)</value>
   </data>

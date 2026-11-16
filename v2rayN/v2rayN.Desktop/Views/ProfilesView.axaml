@@ -97,6 +97,16 @@
                             <PathIcon Data="{StaticResource building_ping}" />
                         </Button.Content>
                     </Button>
+                    <Button
+                        x:Name="btnClearInvalidServers"
+                        Margin="{StaticResource MarginLr4}"
+                        AutomationProperties.Name="{x:Static resx:ResUI.menuClearInvalidServers}"
+                        Classes="IconButton Success"
+                        ToolTip.Tip="{x:Static resx:ResUI.menuClearInvalidServers}">
+                        <Button.Content>
+                            <PathIcon Data="{StaticResource SemiIconDelete}" />
+                        </Button.Content>
+                    </Button>
 
                 </StackPanel>
 

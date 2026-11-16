@@ -876,6 +876,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>Ne használjon proxy szervert helyi (intranet) címekhez</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>Elérhetetlen csomópontok törlése</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>Válasszon egy előfizetési csoportot, és várja meg a teszt vagy a törlés végét.</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>{0} elérhetetlen csomópont törölve.</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>Egykattintásos többszörös késleltetés és sebesség teszt (Ctrl+E)</value>
   </data>

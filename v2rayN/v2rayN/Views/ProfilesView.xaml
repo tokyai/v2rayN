@@ -97,6 +97,16 @@
                     ToolTip="{x:Static resx:ResUI.menuMixedTestServer}">
                     <materialDesign:PackIcon VerticalAlignment="Center" Kind="Speedometer" />
                 </Button>
+                <Button
+                    x:Name="btnClearInvalidServers"
+                    Width="30"
+                    Height="30"
+                    Margin="{StaticResource MarginLeftRight4}"
+                    AutomationProperties.Name="{x:Static resx:ResUI.menuClearInvalidServers}"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}"
+                    ToolTip="{x:Static resx:ResUI.menuClearInvalidServers}">
+                    <materialDesign:PackIcon VerticalAlignment="Center" Kind="Delete" />
+                </Button>
             </WrapPanel>
             <DataGrid
                 x:Name="lstProfiles"

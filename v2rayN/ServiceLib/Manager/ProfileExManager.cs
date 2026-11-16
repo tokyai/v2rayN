@@ -6,6 +6,8 @@ public class ProfileExManager
     private ConcurrentDictionary<string, ProfileExItem> _dicProfileEx = new();
     private readonly ConcurrentQueue<string> _queIndexIds = new();
     private readonly Lock _profileExLock = new();
+    // 清理与定时落盘共用此锁，避免旧落盘任务写回已删除节点的附属记录。
+    private readonly SemaphoreSlim _saveLock = new(1, 1);
     private int _maxSort;
     public static ProfileExManager Instance => _instance.Value;
     private static readonly string _tag = "ProfileExHandler";
@@ -126,8 +128,10 @@ public class ProfileExManager
         }
     }
 
+    /// <summary>将待更新的测速和排序记录落盘，与节点清理串行完成。</summary>
     public async Task SaveTo()
     {
+        await _saveLock.WaitAsync().ConfigureAwait(false);
         try
         {
             await SaveQueueIndexIds();
@@ -135,6 +139,65 @@ public class ProfileExManager
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
+        }
+        finally
+        {
+            _saveLock.Release();
+        }
+    }
+
+    /// <summary>清理指定组内延迟已确认失败的节点，同时删除测速、排序记录和内存缓存。</summary>
+    /// <param name="subId">本次清理固定的订阅组 ID；空 ID 不允许扩大为全部组。</param>
+    /// <returns>实际删除的节点 ID；未测、取消未出结果和不支持测试的节点保留。</returns>
+    public async Task<List<string>> ClearInvalidServers(string? subId)
+    {
+        if (string.IsNullOrWhiteSpace(subId))
+        {
+            return [];
+        }
+
+        // 此管理器拥有测速结果缓存和落盘队列，清理必须与这些任务串行完成。
+        await _saveLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var profiles = await SQLiteHelper.Instance.TableAsync<ProfileItem>()
+                .Where(profile => profile.Subid == subId).ToListAsync().ConfigureAwait(false);
+            var removedIds = new List<string>();
+
+            // 不使用界面搜索结果；直接删除真实节点，失败时事务保留原配置和组归属。
+            await SQLiteHelper.Instance.RunInTransactionAsync(connection =>
+            {
+                foreach (var profile in profiles)
+                {
+                    if (profile.ConfigType.IsComplexType() || profile.Port <= 0 ||
+                        !_dicProfileEx.TryGetValue(profile.IndexId, out var result) || result.Delay >= 0)
+                    {
+                        continue;
+                    }
+
+                    // 写入时再次核对组和配置类型，已移组或改成自定义配置的节点保留。
+                    var count = connection.Execute(
+                        "DELETE FROM ProfileItem WHERE IndexId = ? AND Subid = ? AND ConfigType = ? AND Port > 0",
+                        profile.IndexId, subId, (int)profile.ConfigType);
+                    if (count == 0)
+                    {
+                        continue;
+                    }
+                    connection.Execute("DELETE FROM ProfileExItem WHERE IndexId = ?", profile.IndexId);
+                    removedIds.Add(profile.IndexId);
+                }
+            }).ConfigureAwait(false);
+
+            // 只有事务成功后才移除缓存；队列中的旧 ID 随后落盘时会自然跳过。
+            foreach (var indexId in removedIds)
+            {
+                _dicProfileEx.TryRemove(indexId, out _);
+            }
+            return removedIds;
+        }
+        finally
+        {
+            _saveLock.Release();
         }
     }
 

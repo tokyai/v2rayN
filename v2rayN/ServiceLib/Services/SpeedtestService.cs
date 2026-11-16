@@ -12,6 +12,18 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
     private readonly int _speedTestPageSize = config.SpeedTestItem.SpeedTestPageSize ?? Global.SpeedTestPageSize;
     private readonly TimeSpan _delayInterval = TimeSpan.FromSeconds(config.SpeedTestItem.SpeedTestDelayInterval ?? 1);
 
+    /// <summary>是否仍有未结束的测速批次，包括取消后尚在释放资源的批次。</summary>
+    public bool IsRunning
+    {
+        get
+        {
+            lock (_runLock)
+            {
+                return _runCtsList.Count > 0;
+            }
+        }
+    }
+
     public Task RunLoop(ESpeedActionType actionType, List<ProfileItem> selecteds, CancellationToken ct = default)
     {
         CancellationTokenSource runCts;
@@ -165,7 +177,7 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
         }
 
         //clear test result
-        await SetTestResultAsync(lstSelected, actionType, ResUI.Speedtesting).ConfigureAwait(false);
+        await SetTestResultAsync(lstSelected, actionType, ResUI.Speedtesting, resetDelay: true).ConfigureAwait(false);
 
         if (lstSelected.Count > 1 && (actionType == ESpeedActionType.Speedtest || actionType == ESpeedActionType.Mixedtest))
         {
@@ -175,10 +187,16 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
         return lstSelected;
     }
 
-    private async Task SetTestResultAsync(List<ServerTestItem> lstSelected, ESpeedActionType actionType, string message)
+    private async Task SetTestResultAsync(List<ServerTestItem> lstSelected, ESpeedActionType actionType, string message,
+        bool resetDelay = false)
     {
         foreach (var it in lstSelected)
         {
+            // 新一轮测试将旧延迟改为未测；取消时保留本轮已经返回的真实延迟。
+            if (resetDelay)
+            {
+                ProfileExManager.Instance.SetTestDelay(it.IndexId, 0);
+            }
             switch (actionType)
             {
                 case ESpeedActionType.Tcping:

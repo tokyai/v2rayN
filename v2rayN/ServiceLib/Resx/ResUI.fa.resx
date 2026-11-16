@@ -879,6 +879,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>از سرورهای پروکسی برای آدرس های محلی (اینترانت) استفاده نکنید</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>حذف گره‌های نامعتبر</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>یک گروه اشتراک انتخاب کنید و منتظر پایان آزمایش یا پاک‌سازی بمانید.</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>{0} گره نامعتبر حذف شد.</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>تاخیر و سرعت تست با یک کلیک (Ctrl+E)</value>
   </data>

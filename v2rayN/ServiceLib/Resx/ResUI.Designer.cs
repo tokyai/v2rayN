@@ -1303,6 +1303,33 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
+        ///   查找类似 Clear unavailable nodes 的本地化字符串。
+        /// </summary>
+        public static string menuClearInvalidServers {
+            get {
+                return ResourceManager.GetString("menuClearInvalidServers", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   查找类似 Select a subscription group and wait for testing or cleanup to finish. 的本地化字符串。
+        /// </summary>
+        public static string ClearInvalidServersUnavailable {
+            get {
+                return ResourceManager.GetString("ClearInvalidServersUnavailable", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   查找类似 Removed {0} unavailable nodes. 的本地化字符串。
+        /// </summary>
+        public static string ClearInvalidServersResultTip {
+            get {
+                return ResourceManager.GetString("ClearInvalidServersResultTip", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   查找类似 One-click multi-test latency and speed (Ctrl+E) 的本地化字符串。
         /// </summary>
         public static string menuMixedTestServer {

@@ -77,6 +77,15 @@ public sealed class SQLiteHelper
         return count;
     }
 
+    /// <summary>将一组数据库修改共同提交；任一步骤抛出异常时自动回滚整组修改。</summary>
+    /// <param name="action">必须一起成功的节点及附属记录修改。</param>
+    /// <returns>事务提交或回滚完成后结束。</returns>
+    public Task RunInTransactionAsync(Action<SQLiteConnection> action)
+    {
+        // 复用异步连接的事务和锁，数据库操作在其工作线程执行。
+        return _dbAsync.RunInTransactionAsync(action);
+    }
+
     public async Task<int> DeleteAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T model)
     {
         var mapping = await _dbAsync.GetMappingAsync(typeof(T));

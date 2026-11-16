@@ -882,6 +882,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>Не использовать прокси для локальных (интранет) адресов</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>Удалить недоступные узлы</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>Выберите группу подписки и дождитесь завершения проверки или очистки.</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>Удалено недоступных узлов: {0}.</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>Многопоточный тест задержки и скорости (Ctrl+E)</value>
   </data>

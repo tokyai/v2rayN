@@ -876,6 +876,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>Ne pas utiliser le proxy pour les adresses locales (Intranet)</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>Supprimer les nœuds indisponibles</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>Sélectionnez un groupe d’abonnement et attendez la fin du test ou du nettoyage.</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>{0} nœuds indisponibles supprimés.</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>Tester latence et vitesse multithread en un clic (Ctrl+E)</value>
   </data>

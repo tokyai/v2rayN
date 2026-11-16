@@ -879,6 +879,15 @@
   <data name="TbSettingsNotProxyLocalAddress" xml:space="preserve">
     <value>Yerli (intranet) ünvanlar üçün proksi serverlərdən istifadə etmə</value>
   </data>
+  <data name="menuClearInvalidServers" xml:space="preserve">
+    <value>İşləməyən qovşaqları sil</value>
+  </data>
+  <data name="ClearInvalidServersUnavailable" xml:space="preserve">
+    <value>Abunəlik qrupunu seçin və testin və ya təmizləmənin bitməsini gözləyin.</value>
+  </data>
+  <data name="ClearInvalidServersResultTip" xml:space="preserve">
+    <value>{0} işləməyən qovşaq silindi.</value>
+  </data>
   <data name="menuMixedTestServer" xml:space="preserve">
     <value>Bir kliklə gecikmə və sürət üzrə çoxsaylı yoxlama apar (Ctrl+E)</value>
   </data>
